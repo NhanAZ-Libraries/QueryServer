@@ -41,6 +41,9 @@ libs:
     version: ^0.0.3
 ```
 
+### Example consumer plugin
+- See `examples/QueryConsumer` for a minimal plugin that depends on `QueryServer` and runs `/qtest` to query `test.pmmp.io:19132` via the API.
+
 ## License & Attribution
 - LGPL-3.0-or-later.
 - Bundled **libpmquery** (LGPL-3.0-or-later) by [jasonw4331/libpmquery](https://github.com/jasonw4331/libpmquery).

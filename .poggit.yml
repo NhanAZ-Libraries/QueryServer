@@ -11,4 +11,8 @@ projects:
     libs:
       - src: NhanAZ-Libraries/QueryServer/QueryServerCore
         version: ^0.0.3
+  QueryConsumerExample:
+    path: examples/QueryConsumer
+    depend:
+      - QueryServer
 ...

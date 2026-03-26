@@ -1,0 +1,17 @@
+---
+name: QueryConsumerExample
+version: 0.0.1
+api: 5.0.0
+main: Example\QueryConsumer\Main
+depend:
+  - QueryServer
+commands:
+  qtest:
+    description: Demo: query test.pmmp.io using QueryServer API
+    usage: "/qtest"
+    permission: queryconsumerexample.cmd
+permissions:
+  queryconsumerexample.cmd:
+    default: op
+    description: Allow running the demo query
+...
