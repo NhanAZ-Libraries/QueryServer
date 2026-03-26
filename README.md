@@ -47,3 +47,5 @@ libs:
 ## License & Attribution
 - LGPL-3.0-or-later.
 - Bundled **libpmquery** (LGPL-3.0-or-later) by [jasonw4331/libpmquery](https://github.com/jasonw4331/libpmquery).
+
+_This README was refreshed to trigger a Poggit rebuild._
