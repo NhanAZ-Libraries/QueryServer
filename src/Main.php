@@ -97,7 +97,7 @@ final class Main extends PluginBase {
 
 		if ($host !== null && $port !== null) {
 			$console->sendMessage(self::info("Using fallback UDP query..."));
-			Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, requestId: $result["requestId"] ?? null));
+			Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, requestId: $result["requestId"] ?? null, debug: true));
 			return;
 		}
 
@@ -245,7 +245,9 @@ final class Main extends PluginBase {
 			"ok" => true,
 			"host" => $result["host"] ?? "unknown",
 			"port" => $result["port"] ?? 0,
-			"data" => $result["data"]
+			"data" => $result["data"],
+			"query" => $result["query"] ?? null,
+			"queryError" => $result["queryError"] ?? null
 		];
 
 		if ($requestId !== null && self::getInstance()->deliverCallback($requestId, $payload)) {
@@ -254,6 +256,17 @@ final class Main extends PluginBase {
 
 		$console->sendMessage(self::info("Fallback UDP query result (udp://{$payload["host"]}:{$payload["port"]}):"));
 		self::sendLegacyQuery($console, $payload["data"]);
+
+		if (is_array($payload["query"])) {
+			self::sendQueryPlugins($console, $payload["query"]);
+		} elseif (!empty($payload["queryError"])) {
+			$console->sendMessage(self::info("Query (plugins) failed: ") . TF::RED . $payload["queryError"]);
+			if (!empty($result["debug"])) {
+				$console->sendMessage(self::info("Query debug: challenge=" . ($result["debug"]["challengeRaw"] ?? "n/a") . " full=" . ($result["debug"]["fullStatRaw"] ?? "n/a")));
+			}
+		} else {
+			$console->sendMessage(self::info("Query (plugins): ") . TF::RED . "No response (query may be disabled or blocked)");
+		}
 	}
 
 	public static function splitAddress(?string $address): array {
@@ -289,5 +302,14 @@ final class Main extends PluginBase {
 		unset($this->callbacks[$id]);
 		$cb($payload);
 		return true;
+	}
+
+	private static function sendQueryPlugins(CommandSender $sender, array $query): void {
+		$plugins = $query["plugins"] ?? [];
+		if (is_array($plugins) && count($plugins) > 0) {
+			$sender->sendMessage(self::info("Plugins: ") . TF::GREEN . implode(self::ARRAY_SEPARATOR, $plugins));
+		} elseif (isset($query["raw"]["plugins"])) {
+			$sender->sendMessage(self::info("Plugins: ") . TF::RED . "Unavailable (query returned no list)");
+		}
 	}
 }
