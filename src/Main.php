@@ -4,150 +4,218 @@ declare(strict_types=1);
 
 namespace NhanAZ\QueryServer;
 
-use libpmquery\PMQuery;
-use libpmquery\PmQueryException;
-use pocketmine\player\Player;
-use pocketmine\event\Listener;
-use pocketmine\plugin\PluginBase;
+use NhanAZ\QueryServer\libpmquery\PMQuery;
+use NhanAZ\QueryServer\libpmquery\PmQueryException;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\console\ConsoleCommandSender;
+use pocketmine\player\Player;
+use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
+use pocketmine\utils\TextFormat as TF;
+use function explode;
+use function str_contains;
 
-class Main extends PluginBase implements Listener {
+final class Main extends PluginBase {
 
-	public array $players = [];
-
-	public static function qrs($sender, $query): void {
-		$keys = [
-			"GameName" => "§e>§f GameName:§a ",
-			"HostName" => "§e>§f HostName:§r ",
-			"Protocol" => "§e>§f Protocol:§a ",
-			"Version" => "§e>§f Version:§a ",
-			"Players" => "§e>§f Players:§a ",
-			"MaxPlayers" => "§e>§f MaxPlayers:§a ",
-			"ServerId" => "§e>§f ServerId:§a ",
-			"Map" => "§e>§f Map:§a ",
-			"GameMode" => "§e>§f GameMode:§a ",
-			"NintendoLimited" => "§e>§f NintendoLimited:§a ",
-			"IPv4Port" => "§e>§f IPv4Port:§a ",
-			"IPv6Port" => "§e>§f IPv6Port:§a ",
-			"Extra" => "§e>§f Extra:§a "
-		];
-
-		foreach ($keys as $key => $message) {
-			$value = $query[$key];
-			$output = ($value == null) ? "§cNull!" : $value;
-			$sender->sendMessage($message . $output);
-		}
-	}
-
-	public static function logInfo($status): void {
-		$sender = new ConsoleCommandSender(Server::getInstance(), Server::getInstance()->getLanguage());
-		$serverInfo = $status->ip . ":" . $status->port;
-		if ($status->online) {
-			$sender->sendMessage("§e>§f Domain:§a " . str_replace(":", "§f:§a", $serverInfo));
-
-			$fields = [
-				"ip" => "IP/Port",
-				"debug->ping" => "Ping",
-				"debug->query" => "Query",
-				"debug->srv" => "SRV",
-				"debug->querymismatch" => "QueryMisMatch",
-				"debug->ipinsrv" => "IPInSRV",
-				"debug->cnameinsrv" => "CNameInSRV",
-				"debug->animatedmotd" => "AnimatedMotd",
-				"debug->cachetime" => "CacheTime",
-				"motd->clean" => "Motd",
-				"players->online" => "Online",
-				"players->max" => "Max",
-				"players->list" => "Players",
-				"players->uuid" => "UUIDS",
-				"version" => "Version",
-				"protocol" => "Protocol",
-				"hostname" => "HostName",
-				"icon" => "Icon",
-				"software" => "SoftWare",
-				"map" => "Map",
-				"plugins->raw" => "Plugins",
-				"mods->raw" => "Mods",
-				"info->clean" => "Info"
-			];
-
-			foreach ($fields as $field => $label) {
-				try {
-					$value = $status;
-					foreach (explode("->", $field) as $key) {
-						$value = $value->$key;
-					}
-					$output = ($value == null) ? "§cError or has blocked queries!" : $value;
-					if (is_array($output)) {
-						$output = implode("§f,§a ", $output);
-					}
-					$sender->sendMessage("§e>§f $label:§a " . $output);
-				} catch (\Exception $e) {
-					$sender->sendMessage("§e>§f $label:§c Error or has blocked queries!");
-				}
-			}
-
-			if (strrchr($serverInfo, ":")) {
-				$sender->sendMessage("§e>§f Below is the fallback query method:");
-
-				try {
-					$address = explode(":", $serverInfo);
-					$query = PMQuery::query(host: $address[0], port: (int) $address[1]);
-					Main::qrs($sender, $query);
-				} catch (PmQueryException $e) {
-					$sender->sendMessage("§e>§c The server is offline or has blocked queries!");
-					$sender->sendMessage("§e>§f Possible error:§c Your IP does not open the port or the device does not match!");
-				}
-			}
-		} else {
-			$sender->sendMessage("§e>§c The server is offline or has blocked queries!");
-			$sender->sendMessage("§e>§c Try another query method using §b/querys");
-		}
-	}
+	private const PREFIX = TF::YELLOW . ">" . TF::WHITE . " ";
+	private const ERROR_PREFIX = TF::YELLOW . ">" . TF::RED . " ";
+	private const ARRAY_SEPARATOR = TF::WHITE . ", " . TF::GREEN;
 
 	public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args): bool {
-		if ($cmd->getName() == "query") {
-			if (!isset($args[0])) {
-				$sender->sendMessage("§e>§c Usage: /query §b<domain/ip:port>§c to query certain server information");
-				$sender->sendMessage("§e>§c Example: /query §b0.0.0.0:19132 §cor §b/query goole.com:19132");
-				return true;
-			}
-			if (!$sender instanceof Player) {
-				$this->getServer()->getAsyncPool()->submitTask(new QueryTask($args[0]));
-			} else {
-				$sender->sendMessage("§e>§c Please use the command on the console!");
-			}
+		if (strtolower($cmd->getName()) !== "query") {
+			return false;
+		}
+
+		return $this->handleQuery($sender, $args);
+	}
+
+	private function handleQuery(CommandSender $sender, array $args): bool {
+		if (!isset($args[0])) {
+			$sender->sendMessage(self::error("Usage: /query <domain/ip[:port]> [port]"));
+			$sender->sendMessage(self::error("Example: /query test.pmmp.io 19132"));
 			return true;
 		}
-		if ($cmd->getName() == "querys") {
-			if ($sender instanceof Player) {
-				$sender->sendMessage("§e>§c Please use the command on the console!");
-				return true;
-			}
-			if (!isset($args[0])) {
-				$sender->sendMessage("§e>§f Error:§c You have not entered the IP/Domain of the server you want to query!");
-				$sender->sendMessage("§e>§c Usage: /querys §b<domain/ip> <port>§c to query certain server information");
-				$sender->sendMessage("§e>§c Example: /querys §b0.0.0.0 19132 §cor §b/query goole.com 19132");
-				return true;
-			}
-			if (!isset($args[1])) {
-				$sender->sendMessage("§e>§f Error:§c You have not entered the Port of the server you want to query!");
-				$sender->sendMessage("§e>§c Usage: /querys §b<domain/ip> <port>§c to query certain server information");
-				$sender->sendMessage("§e>§c Example: /querys §b0.0.0.0 19132 §cor §b/query goole.com 19132");
-				return true;
-			}
-			try {
-				$query = PMQuery::query($args[0], (int)$args[1]);
-				Main::qrs($sender, $query);
-			} catch (PmQueryException $e) {
-				$sender->sendMessage("§e>§c The server is offline or has blocked queries!");
-				$sender->sendMessage("§e>§f Possible error:§c Your IP does not open the port or the device does not match!");
-			}
+
+		if ($sender instanceof Player) {
+			$sender->sendMessage(self::error("Please use the command on the console!"));
 			return true;
 		}
+
+		// If a port is provided separately, use direct PMQuery; otherwise use API v3 (async).
+		if (isset($args[1])) {
+			$this->getServer()->getAsyncPool()->submitTask(new FallbackQueryTask($args[0], (int) $args[1]));
+			return true;
+		}
+
+		$this->getServer()->getAsyncPool()->submitTask(new QueryTask($args[0], $this->buildUserAgent()));
 		return true;
+	}
+
+	public static function handleQueryResult(mixed $result): void {
+		$console = new ConsoleCommandSender(Server::getInstance(), Server::getInstance()->getLanguage());
+
+		$address = is_array($result) ? ($result["address"] ?? null) : null;
+		[$host, $port] = self::splitAddress($address);
+
+		$apiShown = false;
+		$fallbackShown = false;
+
+		if (is_array($result) && ($result["ok"] ?? false) === true && is_object($result["data"] ?? null)) {
+			/** @var object $status */
+			$status = $result["data"];
+			$apiShown = self::sendApiStatus($console, $status);
+		} else {
+			$error = is_array($result) ? ($result["error"] ?? "Unknown error") : "No data returned";
+			$console->sendMessage(self::info("Primary API failed: " . $error));
+		}
+
+		if ($host !== null && $port !== null) {
+			$console->sendMessage(self::info("Using fallback UDP query..."));
+			Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port));
+			return;
+		}
+
+		if (!$apiShown && !$fallbackShown) {
+			$console->sendMessage(self::error("The server is offline or has blocked queries!"));
+			$console->sendMessage(self::info("Try another query method using /query <domain> <port>"));
+		}
+	}
+
+	private static function sendApiStatus(CommandSender $sender, object $status): bool {
+		if (!($status->online ?? false)) {
+			return false;
+		}
+
+		$serverInfo = ($status->ip ?? "unknown") . ":" . ($status->port ?? "unknown");
+		$sender->sendMessage(self::info("Domain: ") . TF::GREEN . str_replace(":", TF::WHITE . ":" . TF::GREEN, $serverInfo));
+
+		$fields = [
+			"ip" => "IP/Port",
+			"debug->ping" => "Ping",
+			"debug->query" => "Query",
+			"debug->srv" => "SRV",
+			"debug->querymismatch" => "QueryMisMatch",
+			"debug->ipinsrv" => "IPInSRV",
+			"debug->cnameinsrv" => "CNameInSRV",
+			"debug->animatedmotd" => "AnimatedMotd",
+			"debug->cachetime" => "CacheTime",
+			"motd->clean" => "Motd",
+			"players->online" => "Online",
+			"players->max" => "Max",
+			"players->list" => "Players",
+			"players->uuid" => "UUIDS",
+			"version" => "Version",
+			"protocol" => "Protocol",
+			"hostname" => "HostName",
+			"icon" => "Icon",
+			"software" => "Software",
+			"map" => "Map",
+			"plugins->raw" => "Plugins",
+			"mods->raw" => "Mods",
+			"info->clean" => "Info"
+		];
+
+		foreach ($fields as $field => $label) {
+			self::sendField($sender, $label, self::getNestedValue($status, $field));
+		}
+
+		return true;
+	}
+
+	/**
+	 * Fallback handler for libpmquery results.
+	 *
+	 * @param array<string, mixed> $query
+	 */
+	private static function sendLegacyQuery(CommandSender $sender, array $query): void {
+		$keys = [
+			"GameName" => "GameName",
+			"HostName" => "HostName",
+			"Protocol" => "Protocol",
+			"Version" => "Version",
+			"Players" => "Players",
+			"MaxPlayers" => "MaxPlayers",
+			"ServerId" => "ServerId",
+			"Map" => "Map",
+			"GameMode" => "GameMode",
+			"NintendoLimited" => "NintendoLimited",
+			"IPv4Port" => "IPv4Port",
+			"IPv6Port" => "IPv6Port",
+			"Extra" => "Extra"
+		];
+
+		foreach ($keys as $key => $label) {
+			self::sendField($sender, $label, $query[$key] ?? null);
+		}
+	}
+
+	private static function sendField(CommandSender $sender, string $label, mixed $value): void {
+		if ($value === null || $value === "") {
+			$sender->sendMessage(self::info("$label: ") . TF::RED . "Unavailable");
+			return;
+		}
+
+		if (is_array($value)) {
+			$value = implode(self::ARRAY_SEPARATOR, $value);
+		} elseif (is_bool($value)) {
+			$value = $value ? "true" : "false";
+		}
+
+		$sender->sendMessage(self::info("$label: ") . TF::GREEN . (string) $value);
+	}
+
+	private static function getNestedValue(object $payload, string $path): mixed {
+		$current = $payload;
+		foreach (explode("->", $path) as $segment) {
+			if (!is_object($current) || !property_exists($current, $segment)) {
+				return null;
+			}
+			$current = $current->{$segment};
+		}
+
+		return $current;
+	}
+
+	private static function info(string $message): string {
+		return self::PREFIX . $message;
+	}
+
+	private static function error(string $message): string {
+		return self::ERROR_PREFIX . $message;
+	}
+
+	public static function handleFallbackResult(mixed $result): void {
+		$console = new ConsoleCommandSender(Server::getInstance(), Server::getInstance()->getLanguage());
+
+		if (!is_array($result) || (($result["ok"] ?? false) !== true) || !is_array($result["data"] ?? null)) {
+			$error = is_array($result) ? ($result["error"] ?? "Unknown error") : "No data returned";
+			$console->sendMessage(self::error("Fallback query failed: " . $error));
+			return;
+		}
+
+		$host = $result["host"] ?? "unknown";
+		$port = $result["port"] ?? 0;
+		$console->sendMessage(self::info("Fallback UDP query result (udp://{$host}:{$port}):"));
+		self::sendLegacyQuery($console, $result["data"]);
+	}
+
+	private static function splitAddress(?string $address): array {
+		if ($address !== null && str_contains($address, ":")) {
+			[$host, $port] = explode(":", $address, 2);
+			$host = $host !== "" ? $host : null;
+			$port = $port !== "" ? (int) $port : null;
+			return [$host, $port];
+		}
+
+		return [null, null];
+	}
+
+	private function buildUserAgent(): string {
+		return sprintf(
+			"QueryServer/%s (PocketMine-MP plugin; %s)",
+			$this->getDescription()->getVersion(),
+			PHP_OS_FAMILY
+		);
 	}
 }

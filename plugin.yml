@@ -8,23 +8,13 @@ website: https://github.com/NhanAZ
 description: Query information of other servers
 commands:
   query:
-    aliases: [qr]
-    permission: query.cmd
-    description: Querying some other server's information
-    usage: /query <domain/ip:port> to query certain server information
-    permission-message: §e>§c You do not have permission to use this command!
-  querys:
-    aliases: [qrs]
-    permission: querys.cmd
-    description: Querying some other server's information (Backup method)
-    usage: "/querys <domain/ip : port> to query certain server information"
+    permission: queryserver.cmd
+    description: Querying server information (API v3 or direct query)
+    usage: "/query <domain/ip[:port]> [port] (e.g. /query test.pmmp.io 19132)"
     permission-message: §e>§c You do not have permission to use this command!
 
 permissions:
-  query.cmd:
+  queryserver.cmd:
     default: op
-    description: Allow querying some other servers information
-  querys.cmd:
-    default: op
-    description: Allow querying some other servers information (Backup method)
+    description: Allow querying other servers information
 ...
