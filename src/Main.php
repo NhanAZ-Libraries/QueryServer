@@ -15,12 +15,33 @@ use pocketmine\Server;
 use pocketmine\utils\TextFormat as TF;
 use function explode;
 use function str_contains;
+use function is_callable;
 
 final class Main extends PluginBase {
 
 	private const PREFIX = TF::YELLOW . ">" . TF::WHITE . " ";
 	private const ERROR_PREFIX = TF::YELLOW . ">" . TF::RED . " ";
 	private const ARRAY_SEPARATOR = TF::WHITE . ", " . TF::GREEN;
+
+	private static ?self $instance = null;
+
+	/** @var array<int, callable(array):void> */
+	private array $callbacks = [];
+	private int $nextRequestId = 1;
+	private API $api;
+
+	public static function getInstance(): self {
+		return self::$instance ?? throw new \LogicException("Plugin instance not ready yet");
+	}
+
+	public function getApi(): API {
+		return $this->api;
+	}
+
+	protected function onLoad(): void {
+		self::$instance = $this;
+		$this->api = new API($this);
+	}
 
 	public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args): bool {
 		if (strtolower($cmd->getName()) !== "query") {
@@ -188,16 +209,35 @@ final class Main extends PluginBase {
 	public static function handleFallbackResult(mixed $result): void {
 		$console = new ConsoleCommandSender(Server::getInstance(), Server::getInstance()->getLanguage());
 
-		if (!is_array($result) || (($result["ok"] ?? false) !== true) || !is_array($result["data"] ?? null)) {
-			$error = is_array($result) ? ($result["error"] ?? "Unknown error") : "No data returned";
+		if (!is_array($result)) {
+			$console->sendMessage(self::error("Fallback query failed: Invalid result"));
+			return;
+		}
+
+		$requestId = $result["requestId"] ?? null;
+
+		if (($result["ok"] ?? false) !== true || !is_array($result["data"] ?? null)) {
+			$error = $result["error"] ?? "Unknown error";
+			if ($requestId !== null && self::getInstance()->deliverCallback($requestId, ["ok" => false, "error" => $error])) {
+				return;
+			}
 			$console->sendMessage(self::error("Fallback query failed: " . $error));
 			return;
 		}
 
-		$host = $result["host"] ?? "unknown";
-		$port = $result["port"] ?? 0;
-		$console->sendMessage(self::info("Fallback UDP query result (udp://{$host}:{$port}):"));
-		self::sendLegacyQuery($console, $result["data"]);
+		$payload = [
+			"ok" => true,
+			"host" => $result["host"] ?? "unknown",
+			"port" => $result["port"] ?? 0,
+			"data" => $result["data"]
+		];
+
+		if ($requestId !== null && self::getInstance()->deliverCallback($requestId, $payload)) {
+			return;
+		}
+
+		$console->sendMessage(self::info("Fallback UDP query result (udp://{$payload["host"]}:{$payload["port"]}):"));
+		self::sendLegacyQuery($console, $payload["data"]);
 	}
 
 	private static function splitAddress(?string $address): array {
@@ -211,11 +251,30 @@ final class Main extends PluginBase {
 		return [null, null];
 	}
 
-	private function buildUserAgent(): string {
+	public function buildUserAgent(): string {
 		return sprintf(
 			"QueryServer/%s (PocketMine-MP plugin; %s)",
 			$this->getDescription()->getVersion(),
 			PHP_OS_FAMILY
 		);
+	}
+
+	public function registerCallback(callable $cb): int {
+		$id = $this->nextRequestId++;
+		$this->callbacks[$id] = $cb;
+		return $id;
+	}
+
+	public function deliverCallback(int $id, array $payload): bool {
+		if (!isset($this->callbacks[$id])) {
+			return false;
+		}
+		$cb = $this->callbacks[$id];
+		unset($this->callbacks[$id]);
+		if (is_callable($cb)) {
+			$cb($payload);
+			return true;
+		}
+		return false;
 	}
 }

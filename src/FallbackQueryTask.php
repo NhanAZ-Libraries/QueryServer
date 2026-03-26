@@ -11,7 +11,8 @@ class FallbackQueryTask extends AsyncTask {
 	public function __construct(
 		private string $host,
 		private int $port,
-		private int $timeout = 2
+		private int $timeout = 2,
+		private ?int $requestId = null
 	) {
 	}
 
@@ -24,7 +25,8 @@ class FallbackQueryTask extends AsyncTask {
 			"host" => $this->host,
 			"port" => $this->port,
 			"data" => null,
-			"error" => null
+			"error" => null,
+			"requestId" => $this->requestId
 		];
 
 		try {

@@ -11,7 +11,8 @@ class QueryTask extends AsyncTask {
 
 	public function __construct(
 		private string $address,
-		private string $userAgent
+		private string $userAgent,
+		private ?int $requestId = null
 	) {
 	}
 
@@ -20,7 +21,8 @@ class QueryTask extends AsyncTask {
 			"ok" => false,
 			"address" => $this->address,
 			"data" => null,
-			"error" => null
+			"error" => null,
+			"requestId" => $this->requestId
 		];
 
 		try {
