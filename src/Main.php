@@ -249,7 +249,7 @@ final class Main extends PluginBase {
 
 		if (($result["ok"] ?? false) !== true || !is_array($result["data"] ?? null)) {
 			$error = is_string($result["error"] ?? null) ? $result["error"] : "Unknown error";
-			if ($requestId !== null && self::getInstance()->deliverCallback($requestId, ["ok" => false, "error" => $error])) {
+			if ($requestId !== null && self::getInstance()->deliverCallback($requestId, ["ok" => false, "source" => "udp", "error" => $error])) {
 				return;
 			}
 			$console->sendMessage(self::error("Fallback query failed: " . $error));
@@ -264,6 +264,7 @@ final class Main extends PluginBase {
 		$queryError = is_string($result["queryError"] ?? null) ? $result["queryError"] : null;
 		$payload = [
 			"ok" => true,
+			"source" => "udp",
 			"host" => $host,
 			"port" => $port,
 			"data" => $data,

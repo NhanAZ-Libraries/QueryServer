@@ -81,8 +81,15 @@ namespace {
         'requestId' => $id, 'ok' => true, 'host' => 'example.org', 'port' => 19132,
         'data' => ['HostName' => 'Fixture'], 'query' => null
     ]);
-    check(count($received) === 1 && ($received[0]['data']['HostName'] ?? null) === 'Fixture', 'UDP result not delivered');
+    check(count($received) === 1 && ($received[0]['data']['HostName'] ?? null) === 'Fixture' && $received[0]['source'] === 'udp', 'UDP result not delivered with source');
     check($plugin->deliverCallback($id, []) === false, 'Callback delivered twice');
+
+    $received = [];
+    $id = $plugin->registerCallback(static function (array $result) use (&$received): void { $received[] = $result; });
+    \NhanAZ\QueryServer\Main::handleFallbackResult([
+        'requestId' => $id, 'ok' => false, 'error' => 'UDP timed out'
+    ]);
+    check(count($received) === 1 && $received[0]['ok'] === false && $received[0]['source'] === 'udp', 'UDP failure source not delivered');
 
     $received = [];
     $id = $plugin->registerCallback(static function (array $result) use (&$received): void { $received[] = $result; });

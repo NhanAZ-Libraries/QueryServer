@@ -76,6 +76,26 @@ jobs:
           php -r '$p=new Phar(getenv("PHAR_PATH")); foreach(["plugin.yml","LICENSE","resources/licenses/libpmquery-LICENSE.txt","src/Main.php","src/API.php","src/libpmquery/PMQuery.php"] as $f){if(!$p->offsetExists($f)){throw new RuntimeException("Missing PHAR entry: ".$f);}}'
           cp "$BUILD_METADATA" build/build-metadata.json
 
+      - name: Analyze and build example consumer with pinned DevTools
+        id: consumer
+        uses: NhanAZ/DevTools@6606444fc32787a3e50275fdb668c2310e899740 # v1.0.3
+        with:
+          project: examples/QueryConsumer
+          output: build/consumer
+          phpstan: max
+          phpstan-server: .devtools-dependencies/axolotl-pm
+          phpstan-paths: src
+
+      - name: Verify example consumer PHAR
+        shell: bash
+        env:
+          PHAR_PATH: ${{ steps.consumer.outputs.phar }}
+          PHAR_SHA256: ${{ steps.consumer.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          test "$(sha256sum "$PHAR_PATH" | cut -d ' ' -f 1)" = "$PHAR_SHA256"
+          php -r '$p=new Phar(getenv("PHAR_PATH")); foreach(["plugin.yml","src/Example/QueryConsumer/Main.php"] as $f){if(!$p->offsetExists($f)){throw new RuntimeException("Missing example PHAR entry: ".$f);}}'
+
       - name: Upload verified plugin artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

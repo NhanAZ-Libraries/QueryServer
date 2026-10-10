@@ -7,8 +7,8 @@ depend:
   - QueryServer
 commands:
   qtest:
-    description: "Demo: query test.pmmp.io using QueryServer API"
-    usage: "/qtest"
+    description: "Demo: query a server using QueryServer API"
+    usage: "/qtest [host] [port]"
     permission: queryconsumerexample.cmd
 permissions:
   queryconsumerexample.cmd:
