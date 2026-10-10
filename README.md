@@ -42,7 +42,7 @@ The [example consumer](examples/QueryConsumer) shows plugin dependency and comma
 
 ## Build and verify
 
-The [build workflow](.github/workflows/build.yml) runs PHPStan at maximum level, PHP lint, a callback regression fixture and a DevTools PHAR build. It verifies the manifest, source files, license notices and SHA-256 digest before uploading an artifact. A CI artifact is a test result, not a stable release.
+The [build workflow](.github/workflows/build.yml) runs PHPStan at maximum level, PHP lint, callback and loopback UDP fixtures, and a DevTools PHAR build. It verifies the manifest, source files, license notices and SHA-256 digest before uploading an artifact. The UDP fixture checks ping parsing and malformed replies against a local responder; it does not establish reachability of public servers. A CI artifact is a test result, not a stable release.
 
 The repository also contains historical `virion.yml` and Poggit metadata. The public API currently depends on a loaded plugin instance, so the source should not be presented as a standalone virion. No current standalone virion release is offered.
 

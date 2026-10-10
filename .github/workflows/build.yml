@@ -46,8 +46,10 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --strict --no-check-publish
 
-      - name: Test callback delivery and UDP fallback order
-        run: php tests/callback-flow.php
+      - name: Test callback flow and UDP query transport
+        run: |
+          php tests/callback-flow.php
+          php tests/udp-query.php
 
       - name: Lint plugin, consumer and fixture PHP
         shell: bash
