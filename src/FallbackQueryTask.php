@@ -34,13 +34,11 @@ class FallbackQueryTask extends AsyncTask {
 			$query = \NhanAZ\QueryServer\libpmquery\PMQuery::query($this->host, $this->port, $this->timeout);
 			$result["ok"] = true;
 			$result["data"] = $query;
-			// try full stat (query plugins) but ignore failure
-			if ($this->debug || true) { // always attempt, capture debug if enabled
-				try {
-					$result["query"] = $this->fullStat($this->host, $this->port, $this->timeout, $result["debug"]);
-				} catch (\Throwable $ignored) {
-					$result["queryError"] = $ignored->getMessage();
-				}
+			// Full stat is optional. The basic UDP response remains useful if it fails.
+			try {
+				$result["query"] = $this->fullStat($this->host, $this->port, $this->timeout, $result["debug"]);
+			} catch (\Throwable $ignored) {
+				$result["queryError"] = $ignored->getMessage();
 			}
 		} catch (\Throwable $e) {
 			$result["error"] = $e->getMessage();
@@ -56,6 +54,7 @@ class FallbackQueryTask extends AsyncTask {
 	/**
 	 * Run Minecraft Query full stat (GameSpy v4).
 	 *
+	 * @param array<string, mixed> $debug
 	 * @return array<string, mixed>
 	 */
 	private function fullStat(string $host, int $port, int $timeout, array &$debug): array {
@@ -103,7 +102,7 @@ class FallbackQueryTask extends AsyncTask {
 
 		$payload = substr($resp, 5);
 		$sections = explode("\x00\x00\x01player_\x00\x00", $payload);
-		$kvRaw = $sections[0] ?? "";
+		$kvRaw = $sections[0];
 		$kvParts = explode("\x00", $kvRaw);
 
 		$kv = [];

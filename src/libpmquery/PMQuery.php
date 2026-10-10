@@ -8,7 +8,6 @@ declare(strict_types=1);
  */
 namespace NhanAZ\QueryServer\libpmquery;
 
-use function array_fill;
 use function explode;
 use function fclose;
 use function fread;
@@ -72,9 +71,10 @@ final class PMQuery {
 		return self::parseResponse($data);
 	}
 
+	/** @return resource */
 	private static function openSocket(string $host, int $port, int $timeout) {
 		$lastError = null;
-		$handler = set_error_handler(static function (int $errno, string $errstr) use (&$lastError): bool {
+		set_error_handler(static function (int $errno, string $errstr) use (&$lastError): bool {
 			$lastError = $errstr;
 			return true; // swallow warning
 		});
@@ -93,11 +93,13 @@ final class PMQuery {
 		return $socket;
 	}
 
+	/** @param resource $socket */
 	private static function configureSocket($socket, int $timeout): void {
 		stream_set_timeout($socket, $timeout);
 		stream_set_blocking($socket, true);
 	}
 
+	/** @param resource $socket */
 	private static function sendPing($socket): void {
 		$command = pack('cQ', 0x01, time()); // DefaultMessageIDTypes::ID_UNCONNECTED_PING + 64bit current time
 		$command .= self::MAGIC_BYTES;
@@ -109,6 +111,7 @@ final class PMQuery {
 		}
 	}
 
+	/** @param resource $socket */
 	private static function readResponse($socket): string {
 		$data = fread($socket, self::BUFFER_SIZE);
 
@@ -119,6 +122,7 @@ final class PMQuery {
 		return $data;
 	}
 
+	/** @return array{GameName: ?string, HostName: ?string, Protocol: ?string, Version: ?string, Players: int, MaxPlayers: int, ServerId: ?string, Map: ?string, GameMode: ?string, NintendoLimited: ?string, IPv4Port: int, IPv6Port: int, Extra: ?string} */
 	private static function parseResponse(string $data): array {
 		if (!str_starts_with($data, self::EXPECTED_PREFIX)) {
 			throw new PmQueryException("First byte is not ID_UNCONNECTED_PONG.", E_WARNING);
@@ -138,23 +142,20 @@ final class PMQuery {
 		// Limit to expected fields to prevent extra ';' in MOTD from breaking the layout too badly.
 		$fields = explode(';', $payload, self::FIELD_COUNT);
 
-		// Ensure array has at least expected indexes.
-		$fields += array_fill(0, self::FIELD_COUNT, null);
-
 		return [
 			'GameName' => $fields[0],
-			'HostName' => $fields[1],
-			'Protocol' => $fields[2],
-			'Version' => $fields[3],
+			'HostName' => $fields[1] ?? null,
+			'Protocol' => $fields[2] ?? null,
+			'Version' => $fields[3] ?? null,
 			'Players' => (int) ($fields[4] ?? 0),
 			'MaxPlayers' => (int) ($fields[5] ?? 0),
-			'ServerId' => $fields[6],
-			'Map' => $fields[7],
-			'GameMode' => $fields[8],
-			'NintendoLimited' => $fields[9],
+			'ServerId' => $fields[6] ?? null,
+			'Map' => $fields[7] ?? null,
+			'GameMode' => $fields[8] ?? null,
+			'NintendoLimited' => $fields[9] ?? null,
 			'IPv4Port' => (int) ($fields[10] ?? 0),
 			'IPv6Port' => (int) ($fields[11] ?? 0),
-			'Extra' => $fields[12], // Unknown content.
+			'Extra' => $fields[12] ?? null, // Unknown content.
 		];
 	}
 

@@ -29,8 +29,11 @@ class QueryTask extends AsyncTask {
 			$response = Internet::getURL(
 				"https://api.mcsrvstat.us/3/" . $this->address,
 				10,
-				["User-Agent" => $this->userAgent]
+				["User-Agent: " . $this->userAgent]
 			);
+			if ($response === null) {
+				throw new \RuntimeException("Status API did not return a response");
+			}
 			$decoded = json_decode($response->getBody());
 
 			if (!is_object($decoded)) {

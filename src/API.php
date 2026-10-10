@@ -25,7 +25,7 @@ final class API {
 	 *
 	 * @param string        $host       Domain or IP (host[:port] also accepted).
 	 * @param int|null      $port       Optional port; if null and host has port, it's used; else defaults apply upstream.
-	 * @param callable(array):void $onComplete Callback receives normalized array result.
+	 * @param callable(array<string, mixed>):void $onComplete Callback receives normalized array result.
 	 */
 	public function query(string $host, ?int $port, callable $onComplete): void {
 		[$resolvedHost, $resolvedPort] = Main::splitAddress($host);

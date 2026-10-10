@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace NhanAZ\QueryServer;
 
-use NhanAZ\QueryServer\libpmquery\PMQuery;
-use NhanAZ\QueryServer\libpmquery\PmQueryException;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\console\ConsoleCommandSender;
@@ -15,7 +13,6 @@ use pocketmine\Server;
 use pocketmine\utils\TextFormat as TF;
 use function explode;
 use function str_contains;
-use function is_callable;
 
 final class Main extends PluginBase {
 
@@ -25,7 +22,7 @@ final class Main extends PluginBase {
 
 	private static ?self $instance = null;
 
-	/** @var array<int, callable(array):void> */
+	/** @var array<int, callable(array<string, mixed>):void> */
 	private array $callbacks = [];
 	private int $nextRequestId = 1;
 	private API $api;
@@ -51,8 +48,10 @@ final class Main extends PluginBase {
 		return $this->handleQuery($sender, $args);
 	}
 
+	/** @param array<string> $args */
 	private function handleQuery(CommandSender $sender, array $args): bool {
-		if (!isset($args[0])) {
+		$host = $args[0] ?? null;
+		if (!is_string($host) || $host === "") {
 			$sender->sendMessage(self::error("Usage: /query <domain/ip[:port]> [port]"));
 			$sender->sendMessage(self::error("Example: /query test.pmmp.io 19132"));
 			return true;
@@ -65,57 +64,63 @@ final class Main extends PluginBase {
 
 		// If a port is provided separately, use direct PMQuery; otherwise use API v3 (async).
 		if (isset($args[1])) {
-			$this->getServer()->getAsyncPool()->submitTask(new FallbackQueryTask($args[0], (int) $args[1]));
+			$portText = $args[1];
+			if (!ctype_digit($portText) || (int) $portText < 1 || (int) $portText > 65535) {
+				$sender->sendMessage(self::error("Port must be between 1 and 65535."));
+				return true;
+			}
+			$this->getServer()->getAsyncPool()->submitTask(new FallbackQueryTask($host, (int) $portText));
 			return true;
 		}
 
-		$this->getServer()->getAsyncPool()->submitTask(new QueryTask($args[0], $this->buildUserAgent()));
+		$this->getServer()->getAsyncPool()->submitTask(new QueryTask($host, $this->buildUserAgent()));
 		return true;
 	}
 
 	public static function handleQueryResult(mixed $result): void {
 		$console = new ConsoleCommandSender(Server::getInstance(), Server::getInstance()->getLanguage());
 
-		$address = is_array($result) ? ($result["address"] ?? null) : null;
-		$requestId = is_array($result) ? ($result["requestId"] ?? null) : null;
+		$address = is_array($result) && is_string($result["address"] ?? null) ? $result["address"] : null;
+		$requestId = is_array($result) && is_int($result["requestId"] ?? null) ? $result["requestId"] : null;
 		[$host, $port] = self::splitAddress($address);
 
 		$apiShown = false;
+		$status = null;
 
 		if (is_array($result) && ($result["ok"] ?? false) === true && is_object($result["data"] ?? null)) {
-			/** @var object $status */
 			$status = $result["data"];
 			$apiShown = self::sendApiStatus($console, $status);
-		} else {
-			$error = is_array($result) ? ($result["error"] ?? "Unknown error") : "No data returned";
-			$console->sendMessage(self::info("Primary API failed: " . $error));
-
-			if ($requestId !== null && self::getInstance()->deliverCallback($requestId, ["ok" => false, "source" => "api", "error" => $error])) {
-				// still allow fallback to run if available
-			}
 		}
 
-		if ($host !== null && $port !== null) {
-			$console->sendMessage(self::info("Using fallback UDP query..."));
-			Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, requestId: $result["requestId"] ?? null, debug: true));
+		if ($apiShown) {
+			if ($requestId !== null) {
+				self::getInstance()->deliverCallback($requestId, [
+					"ok" => true,
+					"source" => "api",
+					"address" => $address,
+					"data" => $status
+				]);
+			}
+			if ($requestId === null && $host !== null && $port !== null) {
+				$console->sendMessage(self::info("Using fallback UDP query..."));
+				Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, debug: true));
+			}
 			return;
 		}
 
-		if (!$apiShown) {
-			$console->sendMessage(self::error("The server is offline or has blocked queries!"));
-			$console->sendMessage(self::info("Try another query method using /query <domain> <port>"));
+		$error = is_array($result) && is_string($result["error"] ?? null) ? $result["error"] : "offline or blocked";
+		$console->sendMessage(self::info("Primary API failed: " . $error));
 
-			if ($requestId !== null) {
-				self::getInstance()->deliverCallback($requestId, ["ok" => false, "source" => "api", "error" => "offline or blocked"]);
-			}
-		} elseif ($apiShown && $requestId !== null) {
-			// deliver API success to caller (even if fallback scheduled elsewhere, which returns separately)
-			self::getInstance()->deliverCallback($requestId, [
-				"ok" => true,
-				"source" => "api",
-				"address" => $address,
-				"data" => $result["data"] ?? null
-			]);
+		if ($host !== null && $port !== null) {
+			$console->sendMessage(self::info("Using fallback UDP query..."));
+			Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, requestId: $requestId, debug: true));
+			return;
+		}
+
+		$console->sendMessage(self::error("The server is offline or has blocked queries!"));
+		$console->sendMessage(self::info("Try another query method using /query <domain> <port>"));
+		if ($requestId !== null) {
+			self::getInstance()->deliverCallback($requestId, ["ok" => false, "source" => "api", "error" => $error]);
 		}
 	}
 
@@ -124,7 +129,9 @@ final class Main extends PluginBase {
 			return false;
 		}
 
-		$serverInfo = ($status->ip ?? "unknown") . ":" . ($status->port ?? "unknown");
+		$ip = $status->ip ?? null;
+		$port = $status->port ?? null;
+		$serverInfo = (is_scalar($ip) ? (string) $ip : "unknown") . ":" . (is_scalar($port) ? (string) $port : "unknown");
 		$sender->sendMessage(self::info("Domain: ") . TF::GREEN . str_replace(":", TF::WHITE . ":" . TF::GREEN, $serverInfo));
 
 		$fields = [
@@ -194,9 +201,17 @@ final class Main extends PluginBase {
 		}
 
 		if (is_array($value)) {
-			$value = implode(self::ARRAY_SEPARATOR, $value);
+			$parts = [];
+			foreach ($value as $item) {
+				if (is_scalar($item)) {
+					$parts[] = (string) $item;
+				}
+			}
+			$value = implode(self::ARRAY_SEPARATOR, $parts);
 		} elseif (is_bool($value)) {
 			$value = $value ? "true" : "false";
+		} elseif (!is_scalar($value) && !$value instanceof \Stringable) {
+			$value = "Unavailable";
 		}
 
 		$sender->sendMessage(self::info("$label: ") . TF::GREEN . (string) $value);
@@ -230,10 +245,10 @@ final class Main extends PluginBase {
 			return;
 		}
 
-		$requestId = $result["requestId"] ?? null;
+		$requestId = is_int($result["requestId"] ?? null) ? $result["requestId"] : null;
 
 		if (($result["ok"] ?? false) !== true || !is_array($result["data"] ?? null)) {
-			$error = $result["error"] ?? "Unknown error";
+			$error = is_string($result["error"] ?? null) ? $result["error"] : "Unknown error";
 			if ($requestId !== null && self::getInstance()->deliverCallback($requestId, ["ok" => false, "error" => $error])) {
 				return;
 			}
@@ -241,13 +256,19 @@ final class Main extends PluginBase {
 			return;
 		}
 
+		$host = is_string($result["host"] ?? null) ? $result["host"] : "unknown";
+		$port = is_int($result["port"] ?? null) ? $result["port"] : 0;
+		/** @var array<string, mixed> $data */
+		$data = $result["data"];
+		$query = is_array($result["query"] ?? null) ? $result["query"] : null;
+		$queryError = is_string($result["queryError"] ?? null) ? $result["queryError"] : null;
 		$payload = [
 			"ok" => true,
-			"host" => $result["host"] ?? "unknown",
-			"port" => $result["port"] ?? 0,
-			"data" => $result["data"],
-			"query" => $result["query"] ?? null,
-			"queryError" => $result["queryError"] ?? null
+			"host" => $host,
+			"port" => $port,
+			"data" => $data,
+			"query" => $query,
+			"queryError" => $queryError
 		];
 
 		if ($requestId !== null && self::getInstance()->deliverCallback($requestId, $payload)) {
@@ -257,18 +278,23 @@ final class Main extends PluginBase {
 		$console->sendMessage(self::info("Fallback UDP query result (udp://{$payload["host"]}:{$payload["port"]}):"));
 		self::sendLegacyQuery($console, $payload["data"]);
 
-		if (is_array($payload["query"])) {
-			self::sendQueryPlugins($console, $payload["query"]);
-		} elseif (!empty($payload["queryError"])) {
-			$console->sendMessage(self::info("Query (plugins) failed: ") . TF::RED . $payload["queryError"]);
-			if (!empty($result["debug"])) {
-				$console->sendMessage(self::info("Query debug: challenge=" . ($result["debug"]["challengeRaw"] ?? "n/a") . " full=" . ($result["debug"]["fullStatRaw"] ?? "n/a")));
+		if ($query !== null) {
+			/** @var array<string, mixed> $query */
+			self::sendQueryPlugins($console, $query);
+		} elseif ($queryError !== null && $queryError !== "") {
+			$console->sendMessage(self::info("Query (plugins) failed: ") . TF::RED . $queryError);
+			$debug = $result["debug"] ?? null;
+			if (is_array($debug)) {
+				$challenge = is_scalar($debug["challengeRaw"] ?? null) ? (string) $debug["challengeRaw"] : "n/a";
+				$full = is_scalar($debug["fullStatRaw"] ?? null) ? (string) $debug["fullStatRaw"] : "n/a";
+				$console->sendMessage(self::info("Query debug: challenge=$challenge full=$full"));
 			}
 		} else {
 			$console->sendMessage(self::info("Query (plugins): ") . TF::RED . "No response (query may be disabled or blocked)");
 		}
 	}
 
+	/** @return array{?string, ?int} */
 	public static function splitAddress(?string $address): array {
 		if ($address !== null && str_contains($address, ":")) {
 			[$host, $port] = explode(":", $address, 2);
@@ -288,12 +314,14 @@ final class Main extends PluginBase {
 		);
 	}
 
+	/** @param callable(array<string, mixed>):void $cb */
 	public function registerCallback(callable $cb): int {
 		$id = $this->nextRequestId++;
 		$this->callbacks[$id] = $cb;
 		return $id;
 	}
 
+	/** @param array<string, mixed> $payload */
 	public function deliverCallback(int $id, array $payload): bool {
 		if (!isset($this->callbacks[$id])) {
 			return false;
@@ -304,11 +332,18 @@ final class Main extends PluginBase {
 		return true;
 	}
 
+	/** @param array<string, mixed> $query */
 	private static function sendQueryPlugins(CommandSender $sender, array $query): void {
 		$plugins = $query["plugins"] ?? [];
 		if (is_array($plugins) && count($plugins) > 0) {
-			$sender->sendMessage(self::info("Plugins: ") . TF::GREEN . implode(self::ARRAY_SEPARATOR, $plugins));
-		} elseif (isset($query["raw"]["plugins"])) {
+			$names = [];
+			foreach ($plugins as $plugin) {
+				if (is_string($plugin)) {
+					$names[] = $plugin;
+				}
+			}
+			$sender->sendMessage(self::info("Plugins: ") . TF::GREEN . implode(self::ARRAY_SEPARATOR, $names));
+		} elseif (is_array($query["raw"] ?? null) && isset($query["raw"]["plugins"])) {
 			$sender->sendMessage(self::info("Plugins: ") . TF::RED . "Unavailable (query returned no list)");
 		}
 	}

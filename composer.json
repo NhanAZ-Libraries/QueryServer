@@ -8,7 +8,7 @@
   },
   "autoload": {
     "psr-4": {
-      "NhanAZ\\\\QueryServer\\\\": "src/"
+      "NhanAZ\\QueryServer\\": "src/"
     }
   }
 }
