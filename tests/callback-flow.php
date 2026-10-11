@@ -119,8 +119,27 @@ namespace {
     \NhanAZ\QueryServer\Main::handleQueryResult([
         'address' => 'example.org', 'requestId' => $id, 'ok' => false, 'error' => 'HTTP failed'
     ]);
-    check(count($received) === 1 && $received[0]['ok'] === false, 'No-port failure did not finish');
-    check(count($server->pool->tasks) === 1, 'No-port failure queued invalid fallback');
+    check($received === [], 'No-port HTTP failure consumed callback before UDP fallback');
+    check(count($server->pool->tasks) === 2 && $server->pool->tasks[1] instanceof \NhanAZ\QueryServer\FallbackQueryTask, 'No-port HTTP failure did not queue UDP fallback');
+    check((new \ReflectionProperty($server->pool->tasks[1], 'host'))->getValue($server->pool->tasks[1]) === 'example.org', 'No-port fallback changed the host');
+    check((new \ReflectionProperty($server->pool->tasks[1], 'port'))->getValue($server->pool->tasks[1]) === 19132, 'No-port fallback did not use the Bedrock default port');
+    \NhanAZ\QueryServer\Main::handleFallbackResult([
+        'requestId' => $id, 'ok' => true, 'host' => 'example.org', 'port' => 19132,
+        'data' => ['HostName' => 'Default Port Fixture'], 'query' => null
+    ]);
+    check(count($received) === 1 && ($received[0]['data']['HostName'] ?? null) === 'Default Port Fixture', 'No-port UDP result was not delivered');
+
+    $received = [];
+    $id = $plugin->registerCallback(static function (array $result) use (&$received): void { $received[] = $result; });
+    \NhanAZ\QueryServer\Main::handleQueryResult([
+        'address' => 'example.org', 'requestId' => $id, 'ok' => true,
+        'data' => (object) ['online' => false]
+    ]);
+    check($received === [] && count($server->pool->tasks) === 3, 'Offline HTTP status did not try the Bedrock default port');
+    \NhanAZ\QueryServer\Main::handleFallbackResult([
+        'requestId' => $id, 'ok' => false, 'error' => 'UDP timed out'
+    ]);
+    check(count($received) === 1 && $received[0]['ok'] === false && $received[0]['source'] === 'udp', 'Offline HTTP status did not deliver the final UDP failure');
 
     $received = [];
     $id = $plugin->registerCallback(static function (array $result) use (&$received): void { $received[] = $result; });
@@ -129,7 +148,12 @@ namespace {
         'data' => (object) ['online' => true, 'ip' => '127.0.0.1', 'port' => 19132]
     ]);
     check(count($received) === 1 && $received[0]['source'] === 'api', 'HTTP success did not deliver once');
-    check(count($server->pool->tasks) === 1, 'HTTP success queued redundant fallback');
+    check(count($server->pool->tasks) === 3, 'HTTP success queued redundant fallback');
+    \NhanAZ\QueryServer\Main::handleQueryResult([
+        'address' => 'example.org', 'requestId' => null, 'ok' => true,
+        'data' => (object) ['online' => true, 'ip' => '127.0.0.1', 'port' => 19132]
+    ]);
+    check(count($server->pool->tasks) === 3, 'Successful no-port console lookup queued redundant UDP query');
 
     check(\NhanAZ\QueryServer\Main::splitAddress('example.org:19132') === ['example.org', 19132], 'Valid host and port were not parsed');
     foreach (['example.org:bad', 'example.org:0', 'example.org:65536', '2001:db8::1'] as $invalid) {
@@ -138,8 +162,8 @@ namespace {
 
     $sender = new \pocketmine\command\CommandSender();
     (new \ReflectionMethod($plugin, 'handleQuery'))->invoke($plugin, $sender, ['example.org:19132', '19133']);
-    check(count($server->pool->tasks) === 2, 'Explicit UDP port did not queue a task');
-    $task = $server->pool->tasks[1];
+    check(count($server->pool->tasks) === 4, 'Explicit UDP port did not queue a task');
+    $task = $server->pool->tasks[3];
     check($task instanceof \NhanAZ\QueryServer\FallbackQueryTask, 'Explicit UDP port queued the wrong task');
     check((new \ReflectionProperty($task, 'host'))->getValue($task) === 'example.org', 'Explicit UDP port kept the embedded port in the hostname');
     check((new \ReflectionProperty($task, 'port'))->getValue($task) === 19133, 'Explicit UDP port did not override the embedded port');

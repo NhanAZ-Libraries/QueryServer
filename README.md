@@ -2,7 +2,7 @@
 
 QueryServer is a PocketMine-MP plugin that queries Bedrock server status from the console or through a callback API for plugins.
 
-The command and API use the [Minecraft server status API's Bedrock endpoint](https://api.mcsrvstat.us/) when no separate port is supplied. A host with a port can fall back to a UDP query if the HTTP lookup fails. Supplying the port as a separate API argument or command argument uses UDP directly. The bundled libpmquery implementation handles the basic UDP response, and a second UDP request attempts to obtain the optional full stat.
+The command and API use the [Minecraft server status API's Bedrock endpoint](https://api.mcsrvstat.us/) when no separate port is supplied. If the HTTP lookup fails or reports the server offline, they try UDP on the host's specified port or the Bedrock default port `19132`. Supplying the port as a separate API argument or command argument uses UDP directly. The bundled libpmquery implementation handles the basic UDP response, and a second UDP request attempts to obtain the optional full stat.
 
 ## Requirements and compatibility
 
@@ -20,7 +20,7 @@ Build a plugin PHAR with [DevTools](https://github.com/NhanAZ/DevTools), then pl
 /query example.org 19132
 ```
 
-The first two forms try the HTTP status API, with UDP fallback available for the address containing a port. The third form uses UDP directly. Query results depend on the remote server's query settings and network access.
+The first two forms try the HTTP status API, then UDP if the API fails or reports the server offline. The third form uses UDP directly. Query results depend on the remote server's query settings and network access.
 
 Another plugin can depend on `QueryServer` and call its API after both plugins load:
 

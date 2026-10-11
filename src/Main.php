@@ -19,6 +19,7 @@ final class Main extends PluginBase {
 	private const PREFIX = TF::YELLOW . ">" . TF::WHITE . " ";
 	private const ERROR_PREFIX = TF::YELLOW . ">" . TF::RED . " ";
 	private const ARRAY_SEPARATOR = TF::WHITE . ", " . TF::GREEN;
+	private const DEFAULT_BEDROCK_PORT = 19132;
 
 	private static ?self $instance = null;
 
@@ -110,6 +111,10 @@ final class Main extends PluginBase {
 				Server::getInstance()->getAsyncPool()->submitTask(new FallbackQueryTask($host, $port, debug: true));
 			}
 			return;
+		}
+		if ($host === null && $address !== null && $address !== "" && substr_count($address, ":") === 0) {
+			$host = $address;
+			$port = self::DEFAULT_BEDROCK_PORT;
 		}
 
 		$error = is_array($result) && is_string($result["error"] ?? null) ? $result["error"] : "offline or blocked";
