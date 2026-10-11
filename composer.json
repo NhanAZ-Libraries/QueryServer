@@ -2,7 +2,7 @@
   "name": "nhanaz-libraries/queryserver",
   "description": "QueryServerCore virion + QueryServer plugin: async HTTP (api.mcsrvstat.us v3) with UDP fallback.",
   "type": "project",
-  "license": "LGPL-3.0-or-later",
+  "license": "GPL-3.0-only",
   "require": {
     "php": ">=8.1"
   },
