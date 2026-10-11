@@ -27,7 +27,7 @@ class QueryTask extends AsyncTask {
 
 		try {
 			$response = Internet::getURL(
-				"https://api.mcsrvstat.us/3/" . $this->address,
+				"https://api.mcsrvstat.us/bedrock/3/" . $this->address,
 				10,
 				["User-Agent: " . $this->userAgent]
 			);

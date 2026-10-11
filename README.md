@@ -2,7 +2,7 @@
 
 QueryServer is a PocketMine-MP plugin that queries another server from the console or through a callback API for plugins.
 
-The command and API use the external [Minecraft server status API](https://api.mcsrvstat.us/) when no separate port is supplied. A host with a port can fall back to a UDP query if the HTTP lookup fails. Supplying the port as a separate API argument or command argument uses UDP directly. The bundled libpmquery implementation handles the basic UDP response, and a second UDP request attempts to obtain the optional full stat.
+The command and API use the [Minecraft server status API's Bedrock endpoint](https://api.mcsrvstat.us/) when no separate port is supplied. A host with a port can fall back to a UDP query if the HTTP lookup fails. Supplying the port as a separate API argument or command argument uses UDP directly. The bundled libpmquery implementation handles the basic UDP response, and a second UDP request attempts to obtain the optional full stat.
 
 ## Requirements and compatibility
 

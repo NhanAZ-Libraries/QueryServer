@@ -28,10 +28,27 @@ namespace pocketmine\plugin {
 }
 
 namespace pocketmine\scheduler {
-    class AsyncTask {}
+    class AsyncTask {
+        private mixed $result = null;
+        public function setResult(mixed $result): void { $this->result = $result; }
+        public function getResult(): mixed { return $this->result; }
+    }
 }
 
 namespace pocketmine\utils {
+    class Internet {
+        public static string $requestedUrl = '';
+        /** @var list<string> */
+        public static array $headers = [];
+        /** @param list<string> $headers */
+        public static function getURL(string $url, int $timeout, array $headers): object {
+            self::$requestedUrl = $url;
+            self::$headers = $headers;
+            return new class {
+                public function getBody(): string { return '{"online":true,"port":19132}'; }
+            };
+        }
+    }
     class TextFormat {
         public const YELLOW = '';
         public const WHITE = '';
@@ -69,6 +86,12 @@ namespace {
     $server = new \pocketmine\Server();
     $plugin = new \NhanAZ\QueryServer\Main();
     (new \ReflectionMethod($plugin, 'onLoad'))->invoke($plugin);
+
+    $httpTask = new \NhanAZ\QueryServer\QueryTask('test.pmmp.io', 'QueryServer fixture');
+    $httpTask->onRun();
+    check(\pocketmine\utils\Internet::$requestedUrl === 'https://api.mcsrvstat.us/bedrock/3/test.pmmp.io', 'HTTP task used the Java endpoint instead of the Bedrock endpoint');
+    check(\pocketmine\utils\Internet::$headers === ['User-Agent: QueryServer fixture'], 'HTTP task omitted its User-Agent header');
+    check(($httpTask->getResult()['ok'] ?? null) === true, 'HTTP task did not accept the Bedrock status response');
 
     $received = [];
     $id = $plugin->registerCallback(static function (array $result) use (&$received): void { $received[] = $result; });
