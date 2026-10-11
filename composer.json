@@ -1,6 +1,6 @@
 {
   "name": "nhanaz-libraries/queryserver",
-  "description": "QueryServerCore virion + QueryServer plugin: async HTTP (api.mcsrvstat.us v3) with UDP fallback.",
+  "description": "PocketMine-MP plugin for querying Bedrock server status through HTTP and UDP",
   "type": "project",
   "license": "GPL-3.0-only",
   "require": {

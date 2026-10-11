@@ -5,7 +5,7 @@ api: 5.0.0
 main: NhanAZ\QueryServer\Main
 src-namespace-prefix: NhanAZ\QueryServer
 website: https://github.com/NhanAZ
-description: Query information of other servers
+description: Query Bedrock server status through HTTP and UDP
 commands:
   query:
     permission: queryserver.cmd
