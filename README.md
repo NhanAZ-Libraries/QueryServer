@@ -12,7 +12,7 @@ The command and API use the [Minecraft server status API's Bedrock endpoint](htt
 
 ## Install and use
 
-Build a plugin PHAR with [DevTools](https://github.com/NhanAZ/DevTools), then place the verified PHAR in the server's `plugins` directory. The console command requires the `queryserver.cmd` permission, which defaults to operators.
+Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Libraries/QueryServer/releases/latest) and place it in the server's `plugins` directory. Check the release notes and SHA-256 checksum for that build. To build from source, use [DevTools](https://github.com/NhanAZ/DevTools) and validate the generated PHAR. The console command requires the `queryserver.cmd` permission, which defaults to operators.
 
 ```text
 /query example.org
