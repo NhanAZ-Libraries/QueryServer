@@ -131,5 +131,18 @@ namespace {
     check(count($received) === 1 && $received[0]['source'] === 'api', 'HTTP success did not deliver once');
     check(count($server->pool->tasks) === 1, 'HTTP success queued redundant fallback');
 
+    check(\NhanAZ\QueryServer\Main::splitAddress('example.org:19132') === ['example.org', 19132], 'Valid host and port were not parsed');
+    foreach (['example.org:bad', 'example.org:0', 'example.org:65536', '2001:db8::1'] as $invalid) {
+        check(\NhanAZ\QueryServer\Main::splitAddress($invalid) === [null, null], 'Invalid host and port were accepted');
+    }
+
+    $sender = new \pocketmine\command\CommandSender();
+    (new \ReflectionMethod($plugin, 'handleQuery'))->invoke($plugin, $sender, ['example.org:19132', '19133']);
+    check(count($server->pool->tasks) === 2, 'Explicit UDP port did not queue a task');
+    $task = $server->pool->tasks[1];
+    check($task instanceof \NhanAZ\QueryServer\FallbackQueryTask, 'Explicit UDP port queued the wrong task');
+    check((new \ReflectionProperty($task, 'host'))->getValue($task) === 'example.org', 'Explicit UDP port kept the embedded port in the hostname');
+    check((new \ReflectionProperty($task, 'port'))->getValue($task) === 19133, 'Explicit UDP port did not override the embedded port');
+
     echo "PASS: callback delivery and UDP fallback order\n";
 }

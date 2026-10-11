@@ -12,7 +12,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat as TF;
 use function explode;
-use function str_contains;
+use function substr_count;
 
 final class Main extends PluginBase {
 
@@ -68,6 +68,10 @@ final class Main extends PluginBase {
 			if (!ctype_digit($portText) || (int) $portText < 1 || (int) $portText > 65535) {
 				$sender->sendMessage(self::error("Port must be between 1 and 65535."));
 				return true;
+			}
+			[$addressHost] = self::splitAddress($host);
+			if ($addressHost !== null) {
+				$host = $addressHost;
 			}
 			$this->getServer()->getAsyncPool()->submitTask(new FallbackQueryTask($host, (int) $portText));
 			return true;
@@ -297,11 +301,12 @@ final class Main extends PluginBase {
 
 	/** @return array{?string, ?int} */
 	public static function splitAddress(?string $address): array {
-		if ($address !== null && str_contains($address, ":")) {
-			[$host, $port] = explode(":", $address, 2);
-			$host = $host !== "" ? $host : null;
-			$port = $port !== "" ? (int) $port : null;
-			return [$host, $port];
+		if ($address !== null && substr_count($address, ":") === 1) {
+			[$host, $portText] = explode(":", $address, 2);
+			$port = (int) $portText;
+			if ($host !== "" && ctype_digit($portText) && $port >= 1 && $port <= 65535) {
+				return [$host, $port];
+			}
 		}
 
 		return [null, null];
