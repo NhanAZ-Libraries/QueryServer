@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: axolotl-pm/PocketMine-MP
-          ref: dfe0d07e48a9e8d5a4a242fa43ff1cd3b743a955 # 5.49.1
+          ref: e881fc1bc1c401545baf6bd1f824e41ff3f57bd1 # 5.51.1
           path: .devtools-dependencies/axolotl-pm
           persist-credentials: false
 
@@ -104,4 +104,3 @@ jobs:
             ${{ steps.build.outputs.phar }}
             build/build-metadata.json
           if-no-files-found: error
-          retention-days: 14
