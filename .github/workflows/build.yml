@@ -38,7 +38,7 @@ jobs:
       - name: Set up Axolotl PHP environment
         shell: bash
         env:
-          INPUT_PHP-VERSION: "8.1"
+          INPUT_PHP-VERSION: "8.4"
           INPUT_PM-VERSION-MAJOR: "5"
           INPUT_INSTALL-PATH: ./.php-bin
         run: node .devtools-dependencies/setup-php-action/dist/index.js
@@ -57,7 +57,7 @@ jobs:
 
       - name: Analyze and build with pinned DevTools
         id: build
-        uses: NhanAZ/DevTools@8d13a75aaf4f330fdbd93737d58be9cacc41e262 # v1.0.15
+        uses: NhanAZ/DevTools@v2 # v2
         with:
           project: .
           output: build
@@ -78,7 +78,7 @@ jobs:
 
       - name: Analyze and build example consumer with pinned DevTools
         id: consumer
-        uses: NhanAZ/DevTools@8d13a75aaf4f330fdbd93737d58be9cacc41e262 # v1.0.15
+        uses: NhanAZ/DevTools@v2 # v2
         with:
           project: examples/QueryConsumer
           output: build/consumer
