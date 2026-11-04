@@ -7,9 +7,6 @@ Query Bedrock server status from PocketMine-MP with HTTP and UDP
 [![License](https://img.shields.io/github/license/NhanAZ-Libraries/QueryServer)](https://github.com/NhanAZ-Libraries/QueryServer/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/986553214889517088?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/j2X83ujT6c)
 
-## Overview
-
-This library targets the PocketMine-MP and Axolotl-PM API 5 ecosystem and is maintained under [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries).
 
 ## Requirements and compatibility
 
