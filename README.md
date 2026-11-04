@@ -1,8 +1,15 @@
 # QueryServer
 
-QueryServer is a PocketMine-MP plugin that queries Bedrock server status from the console or through a callback API for plugins.
+Query Bedrock server status from PocketMine-MP with HTTP and UDP
 
-The command and API use the [Minecraft server status API's Bedrock endpoint](https://api.mcsrvstat.us/) when no separate port is supplied. If the HTTP lookup fails or reports the server offline, they try UDP on the host's specified port or the Bedrock default port `19132`. Supplying the port as a separate API argument or command argument uses UDP directly. The bundled libpmquery implementation handles the basic UDP response, and a second UDP request attempts to obtain the optional full stat.
+[![CI](https://github.com/NhanAZ-Libraries/QueryServer/actions/workflows/build.yml/badge.svg)](https://github.com/NhanAZ-Libraries/QueryServer/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/NhanAZ-Libraries/QueryServer)](https://github.com/NhanAZ-Libraries/QueryServer/releases/latest)
+[![License](https://img.shields.io/github/license/NhanAZ-Libraries/QueryServer)](https://github.com/NhanAZ-Libraries/QueryServer/blob/master/LICENSE)
+[![Discord](https://img.shields.io/discord/986553214889517088?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/j2X83ujT6c)
+
+## Overview
+
+This library targets the PocketMine-MP and Axolotl-PM API 5 ecosystem and is maintained under [NhanAZ-Libraries](https://github.com/NhanAZ-Libraries).
 
 ## Requirements and compatibility
 
