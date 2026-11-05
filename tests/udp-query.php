@@ -5,8 +5,8 @@ declare(strict_types=1);
 require __DIR__ . '/../src/libpmquery/PmQueryException.php';
 require __DIR__ . '/../src/libpmquery/PMQuery.php';
 
-use NhanAZ\QueryServer\libpmquery\PMQuery;
-use NhanAZ\QueryServer\libpmquery\PmQueryException;
+use NhanAZ\BedrockQuery\libpmquery\PMQuery;
+use NhanAZ\BedrockQuery\libpmquery\PmQueryException;
 
 if (($argv[1] ?? null) === '--server') {
 	$socket = stream_socket_server('udp://127.0.0.1:0', $errno, $error, STREAM_SERVER_BIND);

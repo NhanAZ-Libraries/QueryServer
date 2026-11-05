@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\QueryServer;
+namespace NhanAZ\BedrockQuery;
 
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\utils\Internet;

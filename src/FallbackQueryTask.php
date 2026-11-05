@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\QueryServer;
+namespace NhanAZ\BedrockQuery;
 
 use pocketmine\scheduler\AsyncTask;
 
@@ -31,7 +31,7 @@ class FallbackQueryTask extends AsyncTask {
 		];
 
 		try {
-			$query = \NhanAZ\QueryServer\libpmquery\PMQuery::query($this->host, $this->port, $this->timeout);
+			$query = \NhanAZ\BedrockQuery\libpmquery\PMQuery::query($this->host, $this->port, $this->timeout);
 			$result["ok"] = true;
 			$result["data"] = $query;
 			// Full stat is optional. The basic UDP response remains useful if it fails.

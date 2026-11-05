@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\QueryServer;
+namespace NhanAZ\BedrockQuery;
 
 /**
  * Public API for other plugins.

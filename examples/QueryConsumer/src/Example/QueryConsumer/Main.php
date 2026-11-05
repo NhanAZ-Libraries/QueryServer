@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Example\QueryConsumer;
 
-use NhanAZ\QueryServer\Main as QueryServer;
+use NhanAZ\BedrockQuery\Main as BedrockQuery;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
@@ -16,9 +16,9 @@ final class Main extends PluginBase {
 			return false;
 		}
 
-		$queryServer = $this->getServer()->getPluginManager()->getPlugin("QueryServer");
-		if (!$queryServer instanceof QueryServer) {
-			$sender->sendMessage("QueryServer plugin is not loaded.");
+		$queryServer = $this->getServer()->getPluginManager()->getPlugin("BedrockQuery");
+		if (!$queryServer instanceof BedrockQuery) {
+			$sender->sendMessage("BedrockQuery plugin is not loaded.");
 			return true;
 		}
 
@@ -30,7 +30,7 @@ final class Main extends PluginBase {
 		}
 		$port = (int) $portText;
 		$api = $queryServer->getApi();
-		$sender->sendMessage("Querying {$host}:{$port} via QueryServer...");
+		$sender->sendMessage("Querying {$host}:{$port} via BedrockQuery...");
 
 		$api->query($host, $port, function (array $result) use ($sender): void {
 			if (($result["ok"] ?? false) !== true) {

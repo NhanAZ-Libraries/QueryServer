@@ -1,10 +1,14 @@
-# QueryServer
+# BedrockQuery
 
 Query Bedrock server status from PocketMine-MP with HTTP and UDP
 
-[![CI](https://github.com/NhanAZ-Libraries/QueryServer/actions/workflows/build.yml/badge.svg)](https://github.com/NhanAZ-Libraries/QueryServer/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/NhanAZ-Libraries/QueryServer)](https://github.com/NhanAZ-Libraries/QueryServer/releases/latest)
-[![License](https://img.shields.io/github/license/NhanAZ-Libraries/QueryServer)](https://github.com/NhanAZ-Libraries/QueryServer/blob/master/LICENSE)
+This is the renamed successor to `QueryServer`. The plugin name, Composer
+package, PHP namespace, virion metadata, examples, permissions and docs all
+use `BedrockQuery`; update old `QueryServer` dependencies before installing it.
+
+[![CI](https://github.com/NhanAZ-Libraries/BedrockQuery/actions/workflows/build.yml/badge.svg)](https://github.com/NhanAZ-Libraries/BedrockQuery/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/NhanAZ-Libraries/BedrockQuery)](https://github.com/NhanAZ-Libraries/BedrockQuery/releases/latest)
+[![License](https://img.shields.io/github/license/NhanAZ-Libraries/BedrockQuery)](https://github.com/NhanAZ-Libraries/BedrockQuery/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/986553214889517088?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/j2X83ujT6c)
 
 
@@ -12,11 +16,11 @@ Query Bedrock server status from PocketMine-MP with HTTP and UDP
 
 - `plugin.yml` declares PocketMine-MP API `5.0.0` and the code requires PHP 8.1 or newer.
 - Static analysis targets Axolotl-PM 5 API. Runtime compatibility across the 5.x line has not yet been established. See the [build workflow](.github/workflows/build.yml) for the exact revision tested in CI.
-- Plugins calling the API must depend on the `QueryServer` plugin so its instance is loaded first.
+- Plugins calling the API must depend on the `BedrockQuery` plugin so its instance is loaded first.
 
 ## Install and use
 
-Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Libraries/QueryServer/releases/latest) and place it in the server's `plugins` directory. Check the release notes and SHA-256 checksum for that build. To build from source, use [DevTools](https://github.com/NhanAZ/DevTools) and validate the generated PHAR. The console command requires the `queryserver.cmd` permission, which defaults to operators.
+Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Libraries/BedrockQuery/releases/latest) and place it in the server's `plugins` directory. Check the release notes and SHA-256 checksum for that build. To build from source, use [DevTools](https://github.com/NhanAZ/DevTools) and validate the generated PHAR. The console command requires the `bedrockquery.cmd` permission, which defaults to operators.
 
 ```text
 /query example.org
@@ -26,10 +30,10 @@ Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Librar
 
 The first two forms try the HTTP status API, then UDP if the API fails or reports the server offline. The third form uses UDP directly. Query results depend on the remote server's query settings and network access.
 
-Another plugin can depend on `QueryServer` and call its API after both plugins load:
+Another plugin can depend on `BedrockQuery` and call its API after both plugins load:
 
 ```php
-use NhanAZ\QueryServer\Main;
+use NhanAZ\BedrockQuery\Main;
 
 Main::getInstance()->getApi()->query("example.org", 19132, function (array $result): void {
     if (($result["ok"] ?? false) !== true) {
@@ -54,6 +58,6 @@ The repository also contains historical `virion.yml` and Poggit metadata. The pu
 
 The project is distributed under the root [GPL-3.0-only license](LICENSE). The bundled [libpmquery](https://github.com/jasonw4331/libpmquery) code retains its LGPL-3.0-or-later notice and separate [license text](libpmquery-LICENSE.txt), which is included in the PHAR. Composer and virion metadata describe the GPL-3.0-only project as a whole.
 
-The [root GPL text was added in 2021](https://github.com/NhanAZ-Libraries/QueryServer/commit/66d5565), before the [2023 contributor changes](https://github.com/NhanAZ-Libraries/QueryServer/commit/7bba7be). The [bundled libpmquery code and notice](https://github.com/NhanAZ-Libraries/QueryServer/commit/bf78f5f) were added in 2026. The later [virion metadata change](https://github.com/NhanAZ-Libraries/QueryServer/commit/e117469) did not change the root license. This history is the basis for aligning the metadata, while preserving the contributor and bundled library notices.
+The [root GPL text was added in 2021](https://github.com/NhanAZ-Libraries/BedrockQuery/commit/66d5565), before the [2023 contributor changes](https://github.com/NhanAZ-Libraries/BedrockQuery/commit/7bba7be). The [bundled libpmquery code and notice](https://github.com/NhanAZ-Libraries/BedrockQuery/commit/bf78f5f) were added in 2026. The later [virion metadata change](https://github.com/NhanAZ-Libraries/BedrockQuery/commit/e117469) did not change the root license. This history is the basis for aligning the metadata, while preserving the contributor and bundled library notices.
 
-Report issues through [GitHub Issues](https://github.com/NhanAZ-Libraries/QueryServer/issues) or [NhanAZ Discord](https://discord.gg/j2X83ujT6c).
+Report issues through [GitHub Issues](https://github.com/NhanAZ-Libraries/BedrockQuery/issues) or [NhanAZ Discord](https://discord.gg/j2X83ujT6c).

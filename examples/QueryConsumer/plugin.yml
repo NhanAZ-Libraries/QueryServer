@@ -4,10 +4,10 @@ version: 0.0.1
 api: 5.0.0
 main: Example\QueryConsumer\Main
 depend:
-  - QueryServer
+  - BedrockQuery
 commands:
   qtest:
-    description: "Demo: query a server using QueryServer API"
+    description: "Demo: query a server using BedrockQuery API"
     usage: "/qtest [host] [port]"
     permission: queryconsumerexample.cmd
 permissions:

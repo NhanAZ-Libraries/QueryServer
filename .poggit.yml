@@ -3,11 +3,11 @@ build-by-default: true
 branches:
 - master
 projects:
-  QueryServer:
+  BedrockQuery:
     path: ""
     libs: []
   QueryConsumerExample:
     path: examples/QueryConsumer
     depend:
-      - QueryServer
+      - BedrockQuery
 ...

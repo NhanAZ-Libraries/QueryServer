@@ -1,5 +1,5 @@
 {
-  "name": "nhanaz-libraries/queryserver",
+  "name": "nhanaz-libraries/bedrockquery",
   "description": "PocketMine-MP plugin for querying Bedrock server status through HTTP and UDP",
   "type": "project",
   "license": "GPL-3.0-only",
@@ -8,7 +8,7 @@
   },
   "autoload": {
     "psr-4": {
-      "NhanAZ\\QueryServer\\": "src/"
+      "NhanAZ\\BedrockQuery\\": "src/"
     }
   }
 }

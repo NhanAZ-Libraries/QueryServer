@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NhanAZ\QueryServer;
+namespace NhanAZ\BedrockQuery;
 
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
@@ -319,7 +319,7 @@ final class Main extends PluginBase {
 
 	public function buildUserAgent(): string {
 		return sprintf(
-			"QueryServer/%s (PocketMine-MP plugin; %s)",
+			"BedrockQuery/%s (PocketMine-MP plugin; %s)",
 			$this->getDescription()->getVersion(),
 			PHP_OS_FAMILY
 		);

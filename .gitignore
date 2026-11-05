@@ -1,1 +1,4 @@
 /build/
+.phpstan-tmp/
+.phpstan.generated.neon
+build/*.phar
