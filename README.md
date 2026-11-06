@@ -20,7 +20,7 @@ use `BedrockQuery`; update old `QueryServer` dependencies before installing it.
 
 ## Install and use
 
-Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Libraries/BedrockQuery/releases/latest) and place it in the server's `plugins` directory. Check the release notes and SHA-256 checksum for that build. To build from source, use [DevTools](https://github.com/NhanAZ/DevTools) and validate the generated PHAR. The console command requires the `bedrockquery.cmd` permission, which defaults to operators.
+Download a verified PHAR from [GitHub Releases](https://github.com/NhanAZ-Libraries/BedrockQuery/releases/latest) and place it in the server's `plugins` directory. Check the release notes and SHA-256 checksum for that build. To build from source, use [DevTools](https://github.com/AxolotlBucketLabs/DevTools) and validate the generated PHAR. The console command requires the `bedrockquery.cmd` permission, which defaults to operators.
 
 ```text
 /query example.org

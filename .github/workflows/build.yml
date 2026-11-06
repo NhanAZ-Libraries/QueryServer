@@ -57,7 +57,7 @@ jobs:
 
       - name: Analyze and build with pinned DevTools
         id: build
-        uses: NhanAZ/DevTools@v2 # v2
+        uses: AxolotlBucketLabs/DevTools@v3 # v3.0.0
         with:
           project: .
           output: build
@@ -78,7 +78,7 @@ jobs:
 
       - name: Analyze and build example consumer with pinned DevTools
         id: consumer
-        uses: NhanAZ/DevTools@v2 # v2
+        uses: AxolotlBucketLabs/DevTools@v3 # v3.0.0
         with:
           project: examples/QueryConsumer
           output: build/consumer
